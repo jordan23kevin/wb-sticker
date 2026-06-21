@@ -19,7 +19,7 @@ DEFAULT_LEFT = 1921; DEFAULT_TOP = 590; ALPHA_THRESHOLD = 20
 DRAG_START = (2100, 720)
 
 BTN = {
-    "AI_tools":     (1340, 120),
+    "AI_tools":     (1320, 140),
     "AI_sticker":   (1460, 560),
     "add_image":    (1510, 678),
     "sel_sticker":  (2110, 800),
@@ -169,8 +169,8 @@ def _run(dx_folder, png_name, is_black):
         hwnd = find_meitu()
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
         ff(hwnd)
-        click(*BTN["AI_tools"], 0.3)
-        click(*BTN["AI_sticker"], 0.15)
+        click(*BTN["AI_tools"], 1.0)
+        click(*BTN["AI_sticker"], 1.0)
     else:
         ff(hwnd)
         key_comb(0x11, 0x57); time.sleep(0.1)
