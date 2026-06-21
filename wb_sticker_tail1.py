@@ -183,7 +183,7 @@ def _run(dx_folder, png_name, is_black):
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
     
     ff(hwnd)
-    click(*BTN["add_image"], 0.3)
+    click(*BTN["add_image"], 0.5)
     if not import_file(png_path):
         print('  [FAIL] import_file failed')
         return False
