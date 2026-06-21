@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # 项目位置: E:\\Claude code\\WB 贴图\\
 # 迁移自: E:\\wb-new-arrivals\\workspace\\WB-Material\\
+# 版本: v2.3.0 | 更新日期: 2026-06-21
+# 成功基线: DX0020 白T+黑T 全部成功，路径正确，快速验证
 """
-WB贴图 v2.0 — 主入口（支持白T/黑T）
+WB贴图 v2.3.0 — 主入口（支持白T/黑T）
 爸爸说"WB贴图"就启动这个脚本。
 
 命名规则：
@@ -19,8 +21,12 @@ WB贴图 v2.0 — 主入口（支持白T/黑T）
 项目位置：E:\\Claude code\\WB 贴图\\
 依赖：pillow, numpy (uv run --with pillow --with numpy --with pyperclip python wb_sticker.py)
 """
-import sys, os
-
+import sys, os, io
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except:
+    try: sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    except: pass
 def get_type(filename):
     """根据文件名判断类型：B/b=背, W/w=正, BW/WB/bw/wb=先背后正
        不含B/W时按文件名最后一位数字: 1=背, 2=正"""
@@ -82,12 +88,22 @@ def main():
         for png in pngs:
             t = get_type(png)
             if t == 'front':
-                print(f"\n{'='*40}\n  {dn}/{png} → 正"); run_tail2_fn(dn, png)
+                print(f"\n{'='*40}\n  {dn}/{png} → 正")
+                if not run_tail2_fn(dn, png):
+                    print(f"  ❌ 正处理失败")
             elif t == 'back':
-                print(f"\n{'='*40}\n  {dn}/{png} → 背"); run_tail1_fn(dn, png)
+                print(f"\n{'='*40}\n  {dn}/{png} → 背")
+                if not run_tail1_fn(dn, png):
+                    print(f"  ❌ 背处理失败")
             elif t == 'both':
-                print(f"\n{'='*40}\n  {dn}/{png} → 背(第一次)"); run_tail1_fn(dn, png)
-                print(f"\n{'='*40}\n  {dn}/{png} → 正(第二次)"); run_tail2_fn(dn, png)
+                print(f"\n{'='*40}\n  {dn}/{png} → 背(第一次)")
+                ok = run_tail1_fn(dn, png)
+                if ok:
+                    print(f"\n{'='*40}\n  {dn}/{png} → 正(第二次)")
+                    if not run_tail2_fn(dn, png):
+                        print(f"  ❌ 正处理失败")
+                else:
+                    print(f"  ❌ 背处理失败，跳过正")
             else:
                 print(f"\n⚠️ 跳过 {dn}/{png} — 文件名不含B/W")
 

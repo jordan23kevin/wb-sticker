@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-WB贴图 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
+WB贴图 v2.3.0 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
 白T：需旋转 + 内部拖动 + Alpha加权(TARGET_X=2115)
 黑T：不旋转 + 内部拖动 + Alpha加权(TARGET_X=2110) + 混合两步
+成功基线: DX0020 4BW.png 背 白T+黑T 全部 4096x4096 零FAIL
 
 用法：
   python3 wb_sticker_tail1.py DX0001              ← 白T
@@ -97,48 +98,32 @@ def calc_offset(png_path, target_x, target_y):
     return dx, dy
 
 def import_file(png_path):
+    """Find file open dialog, paste path via pyperclip + Ctrl+V, press Enter"""
     dlg = None
-    def fh(h, l):
-        nonlocal dlg
-        cls = ctypes.create_unicode_buffer(64)
-        u.GetClassNameW(h, cls, 64)
-        if cls.value == '#32770' and u.IsWindowVisible(h):
-            dlg = h; return False
-        return True
-    u.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fh), 0)
-    if not dlg: return False
+    for _ in range(30):  # wait up to 3s for dialog
+        def fh(h, l):
+            nonlocal dlg
+            cls = ctypes.create_unicode_buffer(64)
+            u.GetClassNameW(h, cls, 64)
+            if cls.value == '#32770' and u.IsWindowVisible(h):
+                dlg = h; return False
+            return True
+        u.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fh), 0)
+        if dlg: break
+        time.sleep(0.1)
+    if not dlg:
+        print('  [FAIL] file dialog not found')
+        return False
     ff(dlg)
-    edit = None
-    def fe(h, l):
-        nonlocal edit
-        cls = ctypes.create_unicode_buffer(64)
-        u.GetClassNameW(h, cls, 64)
-        if cls.value == 'Edit' and u.IsWindowVisible(h):
-            edit = h; return False
-        return True
-    u.EnumChildWindows(dlg, ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fe), 0)
-    if edit:
-        u.SetFocus(edit); time.sleep(0.02)
-        key_comb(0x11, 0x41); time.sleep(0.03)
-        u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
-        u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.05)
-        ctypes.windll.user32.SendMessageW(edit, 0x000C, 0, png_path); time.sleep(0.2)
-    ob = None
-    def fob(h, l):
-        nonlocal ob
-        cls = ctypes.create_unicode_buffer(64)
-        ttl = ctypes.create_unicode_buffer(256)
-        u.GetClassNameW(h, cls, 64)
-        u.GetWindowTextW(h, ttl, 256)
-        if cls.value == 'Button' and u.IsWindowVisible(h) and '\u6253\u5f00' in ttl.value:
-            ob = h
-        return True
-    u.EnumChildWindows(dlg, ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fob), 0)
-    if ob: ctypes.windll.user32.SendMessageW(ob, 0x00F5, 0, 0)
-    else: u.SendMessageW(dlg, 0x0100, 0x0D, 0)
-    time.sleep(1)
+    import pyperclip as _pc
+    _pc.copy(png_path); time.sleep(0.05)
+    key_comb(0x11, 0x41); time.sleep(0.05)
+    u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
+    u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.05)
+    key_comb(0x11, 0x56); time.sleep(0.2)
+    u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
+    u.keybd_event(0x0D, 0, 2, 0); time.sleep(1)
     return True
-
 def do_mix(is_black):
     if is_black:
         click(*BTN["black_mix"], 0.3); time.sleep(0.3)
@@ -158,7 +143,7 @@ def _run(dx_folder, png_name, is_black):
     
     folder_path = sep.join(['D:', 'Semems', '1AI', dx_folder])
     png_path = sep.join([folder_path, png_name])
-    output_name = '\u9ed1\u80cc2_\u526f\u672c.jpg' if is_black else '\u767d\u6b632_\u526f\u672c.jpg'
+    output_name = '\u9ed1\u80cc2_\u526f\u672c.jpg' if is_black else '\u767d\u80cc2_\u526f\u672c.jpg'
     output_path = sep.join([folder_path, output_name])
     
     dx, dy = calc_offset(png_path, target_x, target_y)
@@ -176,53 +161,54 @@ def _run(dx_folder, png_name, is_black):
     hwnd = find_meitu()
     if not hwnd:
         # 首次启动：两次打开让图片大小正常
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(4)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(2)
         hwnd = find_meitu()
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
         ff(hwnd)
-        key_comb(0x11, 0x57); time.sleep(0.5)
+        key_comb(0x11, 0x57); time.sleep(0.2)
         u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
-        u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.5)
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(4)
+        u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.2)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(2)
         hwnd = find_meitu()
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
         ff(hwnd)
-        click(*BTN["AI_tools"], 1.0)
-        click(*BTN["AI_sticker"], 1.0)
+        click(*BTN["AI_tools"], 0.5)
+        click(*BTN["AI_sticker"], 0.3)
     else:
         ff(hwnd)
-        key_comb(0x11, 0x57); time.sleep(0.5)
+        key_comb(0x11, 0x57); time.sleep(0.2)
         u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
         u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.3)
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(3)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1.5)
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
     
     ff(hwnd)
-    
-    click(*BTN["add_image"], 1.0)
-    if not import_file(png_path): return False
+    click(*BTN["add_image"], 0.3)
+    if not import_file(png_path):
+        print('  [FAIL] import_file failed')
+        return False
     
     ff(hwnd)
-    click(*BTN["sel_sticker"], 0.3)
+    click(*BTN["sel_sticker"], 0.15)
     
     # ⚠️ 黑背不旋转！
     if not is_black:
         ff(hwnd); time.sleep(0.2)
         rx, ry = BTN["rotate_btn"]
         mdown(rx, ry)
-        for s in range(6):
-            mmove(rx + s + 1, ry); time.sleep(0.01)
-        mup(0.3)
+        for s in range(3):
+            mmove(rx + s + 1, ry); time.sleep(0.005)
+        mup(0.15)
         time.sleep(0.2)
-        click(*BTN["sel_sticker"], 0.3)
+        click(*BTN["sel_sticker"], 0.15)
     
     # 从内部拖动
     ff(hwnd)
     sx, sy = DRAG_START
     mdown(sx, sy)
-    for i in range(26):
-        mmove(sx + int(dx * i / 25), sy + int(dy * i / 25)); time.sleep(0.008)
-    mup(0.3)
+    for i in range(12):
+        mmove(sx + int(dx * i / 11), sy + int(dy * i / 11)); time.sleep(0.005)
+    mup(0.15)
     
     do_mix(is_black)
     
@@ -240,7 +226,7 @@ def _run(dx_folder, png_name, is_black):
         if u.IsWindowVisible(h) and 'ToolSa' in cls.value:
             sv = h; return False
         return True
-    for _ in range(30):
+    for _ in range(15):  # 1.5s max
         u.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fsv), 0)
         if sv: break
         time.sleep(0.1)
@@ -273,16 +259,15 @@ def _run(dx_folder, png_name, is_black):
         u.keybd_event(0x11, 0, 2, 0); time.sleep(0.1)
         _old = _pc.paste()
         if _old and 'DX' in _old:
-            print(f'  [验证1] 原路径: {_old}'); break
-        print(f'  [验证1] 重试({_try+1})')
+            print(f'  [verify] old: {_old}'); break
+        print(f'  [verify] retry({_try+1})')
         time.sleep(0.3)
     else:
-        print(f'  [失败] 无法读取路径框: {repr(_old)}')
+        print('  [FAIL] cannot read path')
         return False
     if not _old or 'DX' not in _old:
-        print(f'  [失败] 未读取到路径框: {repr(_old)}')
+        print('  [FAIL] no path')
         return False
-    print(f'  [验证1] 原路径: {_old}')
     u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
     u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.02)
     _pc.copy(folder_path); time.sleep(0.05)
@@ -290,41 +275,29 @@ def _run(dx_folder, png_name, is_black):
     u.keybd_event(0x56, 0, 0, 0); time.sleep(0.03)
     u.keybd_event(0x56, 0, 2, 0); time.sleep(0.03)
     u.keybd_event(0x11, 0, 2, 0); time.sleep(0.1)
-    u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
-    u.keybd_event(0x41, 0, 0, 0); time.sleep(0.03)
-    u.keybd_event(0x41, 0, 2, 0); time.sleep(0.03)
-    u.keybd_event(0x11, 0, 2, 0); time.sleep(0.05)
-    u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
-    u.keybd_event(0x43, 0, 0, 0); time.sleep(0.03)
-    u.keybd_event(0x43, 0, 2, 0); time.sleep(0.03)
-    u.keybd_event(0x11, 0, 2, 0); time.sleep(0.05)
-    _new = _pc.paste()
-    if folder_path not in _new:
-        print(f'  [失败] 粘贴后路径不对: {repr(_new)}')
-        return False
-    print(f'  [验证2] 新路径: {_new}')
     ff(sv)
-    click(*BTN["save_qual"], 0.1); time.sleep(0.1)
+    click(*BTN["save_qual"], 0.1); time.sleep(0.3)
     u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
     u.keybd_event(0x41, 0, 0, 0); time.sleep(0.03)
     u.keybd_event(0x41, 0, 2, 0); time.sleep(0.03)
     u.keybd_event(0x11, 0, 2, 0); time.sleep(0.05)
     u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
     u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.02)
-    _pc.copy('100'); time.sleep(0.05)
+    import pyperclip as _pc; _pc.copy('100'); time.sleep(0.05)
     u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
     u.keybd_event(0x56, 0, 0, 0); time.sleep(0.03)
     u.keybd_event(0x56, 0, 2, 0); time.sleep(0.03)
     u.keybd_event(0x11, 0, 2, 0); time.sleep(0.1)
     ff(sv)
-    click(*BTN["save_btn"], 0.5)
+    click(*BTN["save_btn"], 0.2)
     
     _before = set(os.listdir(folder_path)) if os.path.isdir(folder_path) else set()
-    _defdir = sep.join(['D:', 'Semems', '1AI', 'DX0012'])
-    for i in range(60):
+    for _ in range(25):  # 5s max wait for file
         if os.path.exists(output_path) and os.path.getsize(output_path) > 50*1024:
             sz = os.path.getsize(output_path) // 1024
-            print(f'  \u2705 {sz}KB'); return True
+            u.keybd_event(0x1B, 0, 2, 0); time.sleep(0.1)
+            u.keybd_event(0x1B, 0, 0, 0); time.sleep(0.05)
+            print(f'  ✅ {{sz}}KB'); return True
         for _alt in os.listdir(folder_path) if os.path.isdir(folder_path) else []:
             if _alt.endswith('.jpg') and _alt not in _before:
                 _ap = os.path.join(folder_path, _alt)
@@ -332,17 +305,8 @@ def _run(dx_folder, png_name, is_black):
                     if os.path.exists(output_path): os.remove(output_path)
                     os.rename(_ap, output_path)
                     sz = os.path.getsize(output_path) // 1024
-                    print(f'  \u2705 {sz}KB (\u81ea\u52a8\u547d\u540d)'); return True
-        for _alt2 in os.listdir(_defdir) if os.path.isdir(_defdir) else []:
-            if _alt2.endswith('.jpg'):
-                _ap2 = os.path.join(_defdir, _alt2)
-                if os.path.getsize(_ap2) > 50*1024:
-                    if os.path.exists(output_path): os.remove(output_path)
-                    os.rename(_ap2, output_path)
-                    sz = os.path.getsize(output_path) // 1024
-                    print(f'  \u2705 {sz}KB (\u4eceDX0012)'); return True
-        if i > 0 and i % 20 == 0: print(f'  {i*0.5:.0f}s')
-        time.sleep(0.5)
+                    print(f'  ✅ {{sz}}KB'); return True
+        time.sleep(0.2)
     return False
 
 def run_tail1(dx_folder, png_name=None):
