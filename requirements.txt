@@ -1,0 +1,7 @@
+# WB 贴图 — 依赖
+# 运行: uv run --with pillow --with numpy --with pyperclip --with pywin32 python wb_sticker.py
+
+pillow>=10.0.0
+numpy>=1.24.0
+pyperclip>=1.8.2
+pywin32>=306

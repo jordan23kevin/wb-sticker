@@ -1,0 +1,70 @@
+{
+  "ref_window": {
+    "left": 1280,
+    "top": 0,
+    "width": 1280,
+    "height": 1440
+  },
+  "buttons": {
+    "AI_tools": [
+      60,
+      120
+    ],
+    "AI_sticker": [
+      180,
+      560
+    ],
+    "add_image": [
+      230,
+      678
+    ],
+    "sel_sticker": [
+      810,
+      755
+    ],
+    "rotate_btn": [
+      822,
+      994
+    ],
+    "rotate_drop": [
+      827,
+      994
+    ],
+    "canvas_act": [
+      731,
+      736
+    ],
+    "save_path": [
+      882,
+      553
+    ],
+    "save_qual": [
+      980,
+      758
+    ],
+    "save_btn": [
+      944,
+      985
+    ],
+    "overwrite": [
+      695,
+      760
+    ],
+    "mix_norm": [
+      286,
+      880
+    ],
+    "mix_sel": [
+      269,
+      931
+    ],
+    "mix_cfm": [
+      231,
+      940
+    ],
+    "dont_save": [
+      1094,
+      111
+    ]
+  }
+}
