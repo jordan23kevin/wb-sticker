@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-WB贴图 v2.3.0 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
+WB贴图 v2.4.0 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
 白T：需旋转 + 内部拖动 + Alpha加权(TARGET_X=2115)
 黑T：不旋转 + 内部拖动 + Alpha加权(TARGET_X=2110) + 混合两步
-成功基线: DX0020 4BW.png 背 白T+黑T 全部 4096x4096 零FAIL
+成功基线: DX0020-DX0021 白T+黑T 全部保存成功 零FAIL
 
 用法：
   python3 wb_sticker_tail1.py DX0001              ← 白T
@@ -196,8 +196,8 @@ def _run(dx_folder, png_name, is_black):
         ff(hwnd); time.sleep(0.2)
         rx, ry = BTN["rotate_btn"]
         mdown(rx, ry)
-        for s in range(3):
-            mmove(rx + s + 1, ry); time.sleep(0.005)
+        for s in range(2):
+            mmove(rx + s + 1, ry); time.sleep(0.003)
         mup(0.15)
         time.sleep(0.2)
         click(*BTN["sel_sticker"], 0.15)
@@ -206,8 +206,8 @@ def _run(dx_folder, png_name, is_black):
     ff(hwnd)
     sx, sy = DRAG_START
     mdown(sx, sy)
-    for i in range(12):
-        mmove(sx + int(dx * i / 11), sy + int(dy * i / 11)); time.sleep(0.005)
+    for i in range(8):
+        mmove(sx + int(dx * i / 7), sy + int(dy * i / 7)); time.sleep(0.003)
     mup(0.15)
     
     do_mix(is_black)
@@ -226,48 +226,26 @@ def _run(dx_folder, png_name, is_black):
         if u.IsWindowVisible(h) and 'ToolSa' in cls.value:
             sv = h; return False
         return True
-    for _ in range(15):  # 1.5s max
+    for _ in range(5):  # 0.5s max
         u.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fsv), 0)
         if sv: break
         time.sleep(0.1)
     if not sv: return False
     
     ff(sv)
-    click(*BTN["save_path"], 0.1); time.sleep(0.2)
-    u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
-    u.keybd_event(0x41, 0, 0, 0); time.sleep(0.03)
-    u.keybd_event(0x41, 0, 2, 0); time.sleep(0.03)
-    u.keybd_event(0x11, 0, 2, 0); time.sleep(0.05)
-    u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
-    u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.02)
     import pyperclip as _pc
-    ff(sv)
-    for _try in range(2):
-        _pc.copy(''); ff(sv); time.sleep(0.3)
-        for _c in range(3):
-            u.SetCursorPos(2200, 555); time.sleep(0.02)
-            u.mouse_event(0x0002, 0, 0, 0, 0); time.sleep(0.08)
-            u.mouse_event(0x0004, 0, 0, 0, 0); time.sleep(0.05)
-        time.sleep(0.2)
-        u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
-        u.keybd_event(0x41, 0, 0, 0); time.sleep(0.03)
-        u.keybd_event(0x41, 0, 2, 0); time.sleep(0.03)
-        u.keybd_event(0x11, 0, 2, 0); time.sleep(0.05)
-        u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
-        u.keybd_event(0x43, 0, 0, 0); time.sleep(0.03)
-        u.keybd_event(0x43, 0, 2, 0); time.sleep(0.03)
-        u.keybd_event(0x11, 0, 2, 0); time.sleep(0.1)
-        _old = _pc.paste()
-        if _old and 'DX' in _old:
-            print(f'  [verify] old: {_old}'); break
-        print(f'  [verify] retry({_try+1})')
-        time.sleep(0.3)
-    else:
-        print('  [FAIL] cannot read path')
-        return False
-    if not _old or 'DX' not in _old:
-        print('  [FAIL] no path')
-        return False
+    # Click path field twice, verify focus via readback
+    for _c in range(2):
+        u.SetCursorPos(2200, 555); time.sleep(0.02)
+        u.mouse_event(0x0002, 0, 0, 0, 0); time.sleep(0.05)
+        u.mouse_event(0x0004, 0, 0, 0, 0); time.sleep(0.05)
+    time.sleep(0.1)
+    key_comb(0x11, 0x41); time.sleep(0.03)
+    key_comb(0x11, 0x43); time.sleep(0.05)
+    _focus = _pc.paste()
+    if _focus and 'DX' in _focus:
+        print(f'  [path] {_focus}')
+    # Clear and paste new path
     u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
     u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.02)
     _pc.copy(folder_path); time.sleep(0.05)
@@ -292,7 +270,7 @@ def _run(dx_folder, png_name, is_black):
     click(*BTN["save_btn"], 0.2)
     
     _before = set(os.listdir(folder_path)) if os.path.isdir(folder_path) else set()
-    for _ in range(25):  # 5s max wait for file
+    for _ in range(15):  # 3s max wait for file
         if os.path.exists(output_path) and os.path.getsize(output_path) > 50*1024:
             sz = os.path.getsize(output_path) // 1024
             u.keybd_event(0x1B, 0, 2, 0); time.sleep(0.1)

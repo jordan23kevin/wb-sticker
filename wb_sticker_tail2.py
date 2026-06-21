@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-WB贴图 v2.3.0 — 尾数2（正 = 白正2.jpg / 黑正2.jpg）
+WB贴图 v2.4.0 — 尾数2（正 = 白正2.jpg / 黑正2.jpg）
 白T：从右下角(1906,973)→(2166,705)，混合三步
 黑T：从右下角(1906,973)→(2166,705)，混合两步(1545,878→1545,905)
-成功基线: DX0020 4BW.png 正 白T+黑T 全部 4096x4096 零FAIL
+成功基线: DX0020-DX0021 白T+黑T 全部保存成功 零FAIL
 
 用法：
   python3 wb_sticker_tail2.py DX0001              ← 白T
@@ -179,8 +179,8 @@ def _run(dx_folder, png_name, is_black):
     fx, fy = BTN["drag_from"]
     tx, ty = BTN["drag_to"]
     mdown(fx, fy)
-    for i in range(12):
-        mmove(fx + int((tx-fx)*i/11), fy + int((ty-fy)*i/11)); time.sleep(0.005)
+    for i in range(8):
+        mmove(fx + int((tx-fx)*i/7), fy + int((ty-fy)*i/7)); time.sleep(0.003)
     mup(0.15)
     
     do_mix(is_black)
@@ -199,14 +199,35 @@ def _run(dx_folder, png_name, is_black):
         if u.IsWindowVisible(h) and 'ToolSa' in cls.value:
             sv = h; return False
         return True
-    for _ in range(15):  # 1.5s max wait for save dialog
+    for _ in range(5):  # 0.5s max wait for save dialog
         u.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fsv), 0)
         if sv: break
         time.sleep(0.1)
     if not sv:
         print('  [FAIL] save dialog not found')
         return False
-    
+
+    # 设置保存路径
+    ff(sv)
+    import pyperclip as _pc
+    for _c in range(2):
+        u.SetCursorPos(2200, 555); time.sleep(0.02)
+        u.mouse_event(0x0002, 0, 0, 0, 0); time.sleep(0.05)
+        u.mouse_event(0x0004, 0, 0, 0, 0); time.sleep(0.05)
+    time.sleep(0.1)
+    key_comb(0x11, 0x41); time.sleep(0.03)
+    key_comb(0x11, 0x43); time.sleep(0.05)
+    _focus = _pc.paste()
+    if _focus and 'DX' in _focus:
+        print(f'  [path] {_focus}')
+    u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
+    u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.02)
+    _pc.copy(folder_path); time.sleep(0.05)
+    u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
+    u.keybd_event(0x56, 0, 0, 0); time.sleep(0.03)
+    u.keybd_event(0x56, 0, 2, 0); time.sleep(0.03)
+    u.keybd_event(0x11, 0, 2, 0); time.sleep(0.1)
+    ff(sv)
     # 质量100
     click(*BTN["save_qual"], 0.1); time.sleep(0.3)
     u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
@@ -224,11 +245,9 @@ def _run(dx_folder, png_name, is_black):
     click(*BTN["save_btn"], 0.2)
     
     _before = set(os.listdir(folder_path)) if os.path.isdir(folder_path) else set()
-    for _ in range(25):  # 5s max wait for file
+    for _ in range(15):  # 3s max wait for file
         if os.path.exists(output_path) and os.path.getsize(output_path) > 50*1024:
             sz = os.path.getsize(output_path) // 1024
-            u.keybd_event(0x1B, 0, 2, 0); time.sleep(0.1)
-            u.keybd_event(0x1B, 0, 0, 0); time.sleep(0.05)
             print(f'  ✅ {{sz}}KB'); return True
         for _alt in os.listdir(folder_path) if os.path.isdir(folder_path) else []:
             if _alt.endswith('.jpg') and _alt not in _before:
