@@ -136,7 +136,7 @@ def do_mix(is_black):
 def _run(dx_folder, png_name, is_black):
     sep = chr(92)
     color_label = '\u9ed1T' if is_black else '\u767dT'
-    target_x = 2110 if is_black else 2115
+    target_x = 2115  # 黑白背统一
     target_y = 570
     torso_name = '\u9ed1\u80cc2.jpg' if is_black else '\u767d\u80cc2.jpg'
     torso = sep.join(['D:', 'Semems', '1\u80da\u8863', torso_name])
@@ -201,7 +201,9 @@ def _run(dx_folder, png_name, is_black):
         mup(0.08)
         time.sleep(0.1)
         click(*BTN["sel_sticker"], 0.08)
-    
+    else:
+        time.sleep(0.8)  # 黑背置入贴图后等待
+
     # 从内部拖动
     ff(hwnd)
     sx, sy = DRAG_START
