@@ -42,32 +42,32 @@ def ff(hw):
     fg = u.GetForegroundWindow()
     ft = u.GetWindowThreadProcessId(fg, None)
     if ft != tid: u.AttachThreadInput(ft, tid, True)
-    u.SetForegroundWindow(hw); time.sleep(0.03)
+    u.SetForegroundWindow(hw); time.sleep(0.02)
     try: ctypes.windll.user32.SwitchToThisWindow(hw, True)
     except: pass
     time.sleep(0.03)
     if ft != tid: u.AttachThreadInput(ft, tid, False)
 
-def click(x, y, d=0.05):
+def click(x, y, d=0.03):
     u.SetCursorPos(x, y); time.sleep(0.02)
     u.mouse_event(0x0002, 0, 0, 0, 0); time.sleep(0.05)
     u.mouse_event(0x0004, 0, 0, 0, 0); time.sleep(d)
 
 def mdown(x, y):
-    u.SetCursorPos(x, y); time.sleep(0.01)
+    u.SetCursorPos(x, y); time.sleep(0.005)
     u.mouse_event(0x0002, 0, 0, 0, 0); time.sleep(0.02)
 
 def mmove(x, y):
-    u.SetCursorPos(x, y); time.sleep(0.01)
+    u.SetCursorPos(x, y); time.sleep(0.005)
 
 def mup(d=0.1):
     u.mouse_event(0x0004, 0, 0, 0, 0); time.sleep(d)
 
 def key_comb(c, vk):
-    u.keybd_event(c, 0, 0, 0); time.sleep(0.02)
-    u.keybd_event(vk, 0, 0, 0); time.sleep(0.01)
-    u.keybd_event(vk, 0, 2, 0); time.sleep(0.01)
-    u.keybd_event(c, 0, 2, 0); time.sleep(0.03)
+    u.keybd_event(c, 0, 0, 0); time.sleep(0.01)
+    u.keybd_event(vk, 0, 0, 0); time.sleep(0.005)
+    u.keybd_event(vk, 0, 2, 0); time.sleep(0.005)
+    u.keybd_event(c, 0, 2, 0); time.sleep(0.01)
 
 def find_meitu():
     hwnd = u.FindWindowW(None, "美图秀秀-图片编辑")
@@ -120,18 +120,18 @@ def import_file(png_path):
     key_comb(0x11, 0x41); time.sleep(0.05)
     u.keybd_event(0x2E, 0, 0, 0); time.sleep(0.02)
     u.keybd_event(0x2E, 0, 2, 0); time.sleep(0.05)
-    key_comb(0x11, 0x56); time.sleep(0.2)
+    key_comb(0x11, 0x56); time.sleep(0.1)
     u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
-    u.keybd_event(0x0D, 0, 2, 0); time.sleep(1)
+    u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.1)
     return True
 def do_mix(is_black):
     if is_black:
         click(*BTN["black_mix"], 0.3); time.sleep(0.3)
-        click(*BTN["black_normal"], 0.3)
+        click(*BTN["black_normal"], 0.15)
     else:
         click(*BTN["mix_norm"], 0.05)
         click(*BTN["mix_sel"], 0.05)
-        click(*BTN["mix_cfm"], 0.1)
+        click(*BTN["mix_cfm"], 0.05)
 
 def _run(dx_folder, png_name, is_black):
     sep = chr(92)
@@ -161,25 +161,25 @@ def _run(dx_folder, png_name, is_black):
     hwnd = find_meitu()
     if not hwnd:
         # 首次启动：两次打开让图片大小正常
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(2)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1)
         hwnd = find_meitu()
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
         ff(hwnd)
-        key_comb(0x11, 0x57); time.sleep(0.2)
+        key_comb(0x11, 0x57); time.sleep(0.1)
         u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
-        u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.2)
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(2)
+        u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.1)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1)
         hwnd = find_meitu()
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
         ff(hwnd)
-        click(*BTN["AI_tools"], 0.5)
-        click(*BTN["AI_sticker"], 0.3)
+        click(*BTN["AI_tools"], 0.3)
+        click(*BTN["AI_sticker"], 0.15)
     else:
         ff(hwnd)
-        key_comb(0x11, 0x57); time.sleep(0.2)
+        key_comb(0x11, 0x57); time.sleep(0.1)
         u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
-        u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.3)
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1.5)
+        u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.1)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1)
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
     
     ff(hwnd)
@@ -189,26 +189,26 @@ def _run(dx_folder, png_name, is_black):
         return False
     
     ff(hwnd)
-    click(*BTN["sel_sticker"], 0.15)
+    click(*BTN["sel_sticker"], 0.08)
     
     # ⚠️ 黑背不旋转！
     if not is_black:
-        ff(hwnd); time.sleep(0.2)
+        ff(hwnd); time.sleep(0.1)
         rx, ry = BTN["rotate_btn"]
         mdown(rx, ry)
         for s in range(2):
-            mmove(rx + s + 1, ry); time.sleep(0.003)
-        mup(0.15)
-        time.sleep(0.2)
-        click(*BTN["sel_sticker"], 0.15)
+            mmove(rx + s + 1, ry); time.sleep(0.002)
+        mup(0.08)
+        time.sleep(0.1)
+        click(*BTN["sel_sticker"], 0.08)
     
     # 从内部拖动
     ff(hwnd)
     sx, sy = DRAG_START
     mdown(sx, sy)
     for i in range(8):
-        mmove(sx + int(dx * i / 7), sy + int(dy * i / 7)); time.sleep(0.003)
-    mup(0.15)
+        mmove(sx + int(dx * i / 7), sy + int(dy * i / 7)); time.sleep(0.002)
+    mup(0.08)
     
     do_mix(is_black)
     
@@ -240,8 +240,8 @@ def _run(dx_folder, png_name, is_black):
         u.mouse_event(0x0002, 0, 0, 0, 0); time.sleep(0.05)
         u.mouse_event(0x0004, 0, 0, 0, 0); time.sleep(0.05)
     time.sleep(0.1)
-    key_comb(0x11, 0x41); time.sleep(0.03)
-    key_comb(0x11, 0x43); time.sleep(0.05)
+    key_comb(0x11, 0x41); time.sleep(0.02)
+    key_comb(0x11, 0x43); time.sleep(0.03)
     _focus = _pc.paste()
     if _focus and 'DX' in _focus:
         print(f'  [path] {_focus}')
@@ -254,7 +254,7 @@ def _run(dx_folder, png_name, is_black):
     u.keybd_event(0x56, 0, 2, 0); time.sleep(0.03)
     u.keybd_event(0x11, 0, 2, 0); time.sleep(0.1)
     ff(sv)
-    click(*BTN["save_qual"], 0.1); time.sleep(0.3)
+    click(*BTN["save_qual"], 0.1); time.sleep(0.1)
     u.keybd_event(0x11, 0, 0, 0); time.sleep(0.05)
     u.keybd_event(0x41, 0, 0, 0); time.sleep(0.03)
     u.keybd_event(0x41, 0, 2, 0); time.sleep(0.03)
@@ -267,7 +267,7 @@ def _run(dx_folder, png_name, is_black):
     u.keybd_event(0x56, 0, 2, 0); time.sleep(0.03)
     u.keybd_event(0x11, 0, 2, 0); time.sleep(0.1)
     ff(sv)
-    click(*BTN["save_btn"], 0.2)
+    click(*BTN["save_btn"], 0.1)
     
     _before = set(os.listdir(folder_path)) if os.path.isdir(folder_path) else set()
     for _ in range(15):  # 3s max wait for file
