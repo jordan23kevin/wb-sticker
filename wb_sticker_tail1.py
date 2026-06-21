@@ -150,9 +150,6 @@ def _run(dx_folder, png_name, is_black):
     print(f'{color_label} \u5c3e\u65701 — {dx_folder}/{png_name}')
     print(f'  TARGET_X={target_x}, dx={dx}, dy={dy}')
     print(f'  \u62d6\u52a8: ({DRAG_START[0]},{DRAG_START[1]}) -> ({DRAG_START[0]+dx},{DRAG_START[1]+dy})')
-    if is_black:
-        print(f'  \u26a0\ufe0f \u9ed1\u80cc\u4e0d\u9700\u8981\u65cb\u8f6c')
-    
     # 检查是否已保存
     if os.path.exists(output_path) and os.path.getsize(output_path) > 50*1024:
         print(f'  \u2705 \u5df2\u5b58\u5728\uff0c\u8df3\u8fc7')
@@ -191,18 +188,15 @@ def _run(dx_folder, png_name, is_black):
     ff(hwnd)
     click(*BTN["sel_sticker"], 0.08)
     
-    # ⚠️ 黑背不旋转！
-    if not is_black:
-        ff(hwnd); time.sleep(0.1)
-        rx, ry = BTN["rotate_btn"]
-        mdown(rx, ry)
-        for s in range(2):
-            mmove(rx + s + 1, ry); time.sleep(0.002)
-        mup(0.08)
-        time.sleep(0.1)
-        click(*BTN["sel_sticker"], 0.08)
-    else:
-        time.sleep(0.8)  # 黑背置入贴图后等待
+    # 旋转（黑白背统一）
+    ff(hwnd); time.sleep(0.1)
+    rx, ry = BTN["rotate_btn"]
+    mdown(rx, ry)
+    for s in range(2):
+        mmove(rx + s + 1, ry); time.sleep(0.002)
+    mup(0.08)
+    time.sleep(0.1)
+    click(*BTN["sel_sticker"], 0.08)
 
     # 从内部拖动
     ff(hwnd)
