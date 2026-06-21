@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-WB贴图 v2.4.0 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
-白T：需旋转 + 内部拖动 + Alpha加权(TARGET_X=2115)
-黑T：不旋转 + 内部拖动 + Alpha加权(TARGET_X=2110) + 混合两步
-成功基线: DX0020-DX0021 白T+黑T 全部保存成功 零FAIL
+WB贴图 v2.6.0 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
+白T：旋转 + 内部拖动 + Alpha加权(TARGET_X=2115)
+黑T：旋转 + 内部拖动 + Alpha加权(TARGET_X=2115) + 混合两步
+成功基线: DX0020-DX0035 黑白全部 100% 零FAIL
 
 用法：
   python3 wb_sticker_tail1.py DX0001              ← 白T
