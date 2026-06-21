@@ -158,14 +158,14 @@ def _run(dx_folder, png_name, is_black):
     hwnd = find_meitu()
     if not hwnd:
         # 首次启动：两次打开让图片大小正常
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1.5)
         hwnd = find_meitu()
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
         ff(hwnd)
         key_comb(0x11, 0x57); time.sleep(0.1)
         u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
         u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.1)
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1.5)
         hwnd = find_meitu()
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
         ff(hwnd)
@@ -176,7 +176,7 @@ def _run(dx_folder, png_name, is_black):
         key_comb(0x11, 0x57); time.sleep(0.1)
         u.keybd_event(0x0D, 0, 0, 0); time.sleep(0.02)
         u.keybd_event(0x0D, 0, 2, 0); time.sleep(0.1)
-        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1)
+        subprocess.Popen([MEITU_EXE, torso]); time.sleep(1.5)
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
     
     ff(hwnd)
