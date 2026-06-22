@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-WB贴图 v2.7.0 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
+WB贴图 v2.8.0 — 尾数1（背 = 白背2.jpg / 黑背2.jpg）
 白T：旋转 + 内部拖动 + Alpha加权(TARGET_X=2115)
-黑T：旋转 + 内部拖动 + Alpha加权(TARGET_X=2115) + 混合两步
-成功基线: DX0020-DX0035 黑白全部 100% 零FAIL
+黑T：旋转 + 内部拖动 + Alpha加权(TARGET_X=2115) + 混合两步 + 深色跳过
+成功基线: DX0002-DX0034 白T+黑T 全部 100% 零FAIL
 
 用法：
   python3 wb_sticker_tail1.py DX0001              ← 白T
@@ -36,6 +36,38 @@ BTN = {
 }
 
 u = ctypes.windll.user32
+gdi = ctypes.windll.gdi32
+
+def get_pixel(x, y):
+    """Get screen pixel RGB at (x,y)."""
+    dc = u.GetDC(0)
+    c = gdi.GetPixel(dc, x, y)
+    u.ReleaseDC(0, dc)
+    return c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF
+
+def sample_pixels():
+    """Sample pixel colors at expected sticker area. Returns list of (r,g,b)."""
+    pts = [(DRAG_START[0]+dx, DRAG_START[1]+dy) for dx,dy in
+           [(0,0),(50,0),(-50,0),(0,50),(0,-50),(50,50),(-50,-50),(80,0),(0,80)]]
+    return [get_pixel(x, y) for x, y in pts]
+
+def wait_sticker(before, timeout=15):
+    """Wait until pixels change from before-snapshot (sticker loaded)."""
+    pts = [(DRAG_START[0]+dx, DRAG_START[1]+dy) for dx,dy in
+           [(0,0),(50,0),(-50,0),(0,50),(0,-50),(50,50),(-50,-50),(80,0),(0,80)]]
+    end = time.time() + timeout
+    while time.time() < end:
+        changed = 0
+        for i, (px, py) in enumerate(pts):
+            r, g, b = get_pixel(px, py)
+            br, bg, bb = before[i]
+            if abs(r-br) > 15 or abs(g-bg) > 15 or abs(b-bb) > 15:
+                changed += 1
+        if changed >= 3:
+            return True
+        time.sleep(0.2)
+    print('  [WARN] Sticker load timeout', flush=True)
+    return False
 
 def ff(hw):
     tid = u.GetWindowThreadProcessId(hw, None)
@@ -97,6 +129,21 @@ def calc_offset(png_path, target_x, target_y):
     dy = int(round(target_y - y_min * scale - DEFAULT_TOP))
     return dx, dy
 
+def is_dark_image(png_path, threshold=80):
+    """Check if image is predominantly dark (non-transparent avg brightness < threshold)."""
+    try:
+        img = Image.open(png_path).convert("RGBA")
+        a = np.array(img)
+        alpha = a[:,:,3]
+        mask = alpha >= 20
+        if not mask.any():
+            return False
+        pixels = a[:,:,:3][mask].astype(np.float64)
+        avg_brightness = pixels.mean()
+        return avg_brightness < threshold
+    except:
+        return False
+
 def import_file(png_path):
     """Find file open dialog, paste path via pyperclip + Ctrl+V, press Enter"""
     dlg = None
@@ -154,7 +201,12 @@ def _run(dx_folder, png_name, is_black):
     if os.path.exists(output_path) and os.path.getsize(output_path) > 50*1024:
         print(f'  \u2705 \u5df2\u5b58\u5728\uff0c\u8df3\u8fc7')
         return True
-    
+
+    # \u9ed1T\u65f6\u68c0\u67e5\uff1a\u6df1\u8272\u8d34\u56fe\u76f4\u63a5\u8df3\u8fc7\uff08\u6df1\u8272+\u9ed1T=\u9519\u8bef\u642d\u914d\uff09
+    if is_black and is_dark_image(png_path):
+        print(f'  \u23ed\ufe0f \u6df1\u8272\u8d34\u56fe\uff0c\u9ed1T\u8df3\u8fc7')
+        return True
+
     hwnd = find_meitu()
     if not hwnd:
         # 首次启动：两次打开让图片大小正常
@@ -180,14 +232,16 @@ def _run(dx_folder, png_name, is_black):
         u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040); time.sleep(0.3)
     
     ff(hwnd)
+    before = sample_pixels()
     click(*BTN["add_image"], 0.5)
     if not import_file(png_path):
         print('  [FAIL] import_file failed')
         return False
-    
+
     ff(hwnd)
+    wait_sticker(before)
     click(*BTN["sel_sticker"], 0.08)
-    
+
     # 旋转（黑白背统一）
     ff(hwnd); time.sleep(0.1)
     rx, ry = BTN["rotate_btn"]
