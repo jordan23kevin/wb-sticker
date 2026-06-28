@@ -15,7 +15,7 @@ from utils.detector import calc_offset_back, is_dark_image
 u = ctypes.windll.user32
 
 
-def process_back(dx_folder: str, png_name: str, is_black: bool = False) -> bool:
+def process_back(dx_folder: str, png_name: str, is_black: bool = False, skip_ai_entry: bool = False) -> bool:
     """处理背图贴图，直接输出到 03_UPLOAD"""
     color_label = "黑T" if is_black else "白T"
     color_output = "黑T" if is_black else "白T"
@@ -42,16 +42,24 @@ def process_back(dx_folder: str, png_name: str, is_black: bool = False) -> bool:
     drag_start = TAIL1["DRAG_START"]
 
     hwnd = find_meitu()
-    if not hwnd:
+    hwnd = find_meitu()
+    if skip_ai_entry and hwnd:
+        hwnd = switch_torso(hwnd, torso_path, keep_alive=True)
+        if not hwnd:
+            return False
+        time.sleep(1.5)
+    elif hwnd:
+        hwnd = switch_torso(hwnd, torso_path)
+        if not hwnd:
+            return False
+        time.sleep(1.5)
+        enter_ai_sticker(hwnd)
+    else:
         hwnd = launch_meitu(torso_path)
         if not hwnd:
             return False
         time.sleep(0.2)
         enter_ai_sticker(hwnd)
-    else:
-        hwnd = switch_torso(hwnd, torso_path)
-        if not hwnd:
-            return False
 
     ff(hwnd)
     time.sleep(0.2)
@@ -70,7 +78,7 @@ def process_back(dx_folder: str, png_name: str, is_black: bool = False) -> bool:
             return False
 
     ff(hwnd)
-    wait_sticker(before)
+    wait_sticker(before, hwnd=hwnd)
     click(*BTN["sel_sticker"], 0.08)
 
     ff(hwnd)

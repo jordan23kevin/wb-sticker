@@ -15,7 +15,7 @@ from utils.detector import is_dark_image
 u = ctypes.windll.user32
 
 
-def process_front(dx_folder: str, png_name: str, is_black: bool = False) -> bool:
+def process_front(dx_folder: str, png_name: str, is_black: bool = False, skip_ai_entry: bool = False) -> bool:
     """处理正图贴图，直接输出到 03_UPLOAD"""
     color_label = "黑T" if is_black else "白T"
     color_output = "黑T" if is_black else "白T"
@@ -37,16 +37,22 @@ def process_front(dx_folder: str, png_name: str, is_black: bool = False) -> bool
         return True
 
     hwnd = find_meitu()
-    if not hwnd:
+    if skip_ai_entry and hwnd:
+        # 美图已打开好胚衣+AI贴图，直接开始
+        ff(hwnd)
+        time.sleep(0.2)
+    elif hwnd:
+        hwnd = switch_torso(hwnd, torso_path, keep_alive=True)
+        if not hwnd:
+            return False
+        time.sleep(1.5)
+        # AI贴图已展开，不调用 enter_ai_sticker
+    else:
         hwnd = launch_meitu(torso_path)
         if not hwnd:
             return False
         time.sleep(0.2)
         enter_ai_sticker(hwnd)
-    else:
-        hwnd = switch_torso(hwnd, torso_path)
-        if not hwnd:
-            return False
 
     ff(hwnd)
     time.sleep(0.2)
@@ -64,7 +70,7 @@ def process_front(dx_folder: str, png_name: str, is_black: bool = False) -> bool
             return False
 
     ff(hwnd)
-    wait_sticker(before)
+    wait_sticker(before, hwnd=hwnd)
     click(*BTN["sel_sticker"], 0.08)
 
     ff(hwnd)

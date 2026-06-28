@@ -19,9 +19,10 @@ from workflow.pipeline import run_pipeline
 def main():
     args = sys.argv[1:]
     is_black = "--black" in args
-    args = [a for a in args if a != "--black"]
+    skip_ai = "--skip-ai" in args
+    args = [a for a in args if a not in ("--black", "--skip-ai")]
     single_folder = args[0] if args else None
-    run_pipeline(is_black=is_black, single_folder=single_folder)
+    run_pipeline(is_black=is_black, single_folder=single_folder, skip_ai_entry=skip_ai)
 
 
 if __name__ == "__main__":

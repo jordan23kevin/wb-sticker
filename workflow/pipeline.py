@@ -9,7 +9,7 @@ from utils.sticker_typer import get_type
 from utils.detector import is_dark_image
 
 
-def run_pipeline(is_black: bool = False, single_folder: str | None = None):
+def run_pipeline(is_black: bool = False, single_folder: str | None = None, skip_ai_entry: bool = False):
     color_name = "黑T" if is_black else "白T"
     print("=" * 50)
     print(f"  WB贴图 v3.0 (OS) - {color_name}")
@@ -53,18 +53,18 @@ def run_pipeline(is_black: bool = False, single_folder: str | None = None):
             t = get_type(png)
             if t == "front":
                 print(f"\n{'=' * 40}\n  {dn}/{png} -> 正")
-                if not process_front(dn, png, is_black):
+                if not process_front(dn, png, is_black, skip_ai_entry):
                     print("  [FAIL] 正处理失败")
             elif t == "back":
                 print(f"\n{'=' * 40}\n  {dn}/{png} -> 背")
-                if not process_back(dn, png, is_black):
+                if not process_back(dn, png, is_black, skip_ai_entry):
                     print("  [FAIL] 背处理失败")
             elif t == "both":
                 print(f"\n{'=' * 40}\n  {dn}/{png} -> 背(1/2)")
-                ok = process_back(dn, png, is_black)
+                ok = process_back(dn, png, is_black, skip_ai_entry)
                 if ok:
                     print(f"\n{'=' * 40}\n  {dn}/{png} -> 正(2/2)")
-                    if not process_front(dn, png, is_black):
+                    if not process_front(dn, png, is_black, skip_ai_entry):
                         print("  [FAIL] 正处理失败")
                 else:
                     print("  [FAIL] 背处理失败，跳过正")

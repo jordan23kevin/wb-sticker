@@ -21,6 +21,7 @@ BTN = {
     "black_mix":    (1545, 878),
     "black_normal": (1545, 905),
     "save_path":    (2200, 555),
+    "save_filename": (2180, 628),
     "save_qual":    (2260, 758),
     "save_btn":     (2224, 985),
 }
