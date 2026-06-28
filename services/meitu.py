@@ -174,24 +174,34 @@ def sample_pixels(center_x=1920, center_y=700):
     return [get_pixel(center_x + dx, center_y + dy) for dx, dy in offsets]
 
 
-def wait_sticker(before=None, center_x=0, center_y=0, timeout=0, hwnd=None):
-    """贴图置入后等3D识别完成
+def wait_sticker(before=None, center_x=1920, center_y=700, timeout=0, hwnd=None):
+    """贴图置入后等渲染完成 — 像素变化检测
 
-    美图导入图片后会卡死进行3D识别，窗口不响应时不能操作鼠标。
-    等窗口恢复响应后才继续。
+    美图导入图片后（可能有3D识别），等画布像素变化即渲染完成。
+    before 是 sample_pixels() 在 (center_x, center_y) 附近5x5网格的采样值。
+    相同坐标重新采样，有任一像素变化 >15 则认为贴图已渲染。
     """
-    if hwnd:
-        # 先等 3s 确保3D识别启动（窗口会卡死）
-        time.sleep(3.0)
-        # 然后等窗口恢复响应
-        for i in range(120):  # 最多等 60s（从启动开始算）
-            if is_window_responding(hwnd):
-                time.sleep(0.5)  # 额外等渲染稳定
-                return True
-            time.sleep(0.3)
-        print("  [WARN] 3D识别超时(60s)，强制继续")
-    else:
+    if not before:
+        time.sleep(0.5)
+        return True
+
+    # 生成与 sample_pixels 一致的偏移列表
+    offsets = [(dx, dy) for dx in range(-400, 401, 200) for dy in range(-400, 401, 200)]
+
+    for i in range(120):  # 最多等 36s
+        changed = False
+        for j, (dx, dy) in enumerate(offsets):
+            if j >= len(before):
+                break
+            now = get_pixel(center_x + dx, center_y + dy)
+            if any(abs(now[c] - before[j][c]) > 15 for c in range(3)):
+                changed = True
+                break
+        if changed:
+            time.sleep(0.2)
+            return True
         time.sleep(0.3)
+    print("  [WARN] 像素无变化超时(36s)，强制继续")
     return True
 
 
