@@ -1,4 +1,4 @@
-"""图像检测工具 — 深色检测、像素分析"""
+"""图像检测工具 — 深色检测(W3C相对亮度)、像素分析"""
 
 import numpy as np
 from PIL import Image
@@ -6,8 +6,25 @@ from PIL import Image
 from config.settings import ALPHA_THRESHOLD, DARK_THRESHOLD
 
 
+def _srgb_to_linear(c):
+    """sRGB → 线性化（W3C标准）"""
+    c = c / 255.0
+    return np.where(c <= 0.03928, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def relative_luminance(rgb_pixels):
+    """计算相对亮度（W3C标准）
+       L = 0.2126*R + 0.7152*G + 0.0722*B
+    """
+    r, g, b = rgb_pixels[:, 0], rgb_pixels[:, 1], rgb_pixels[:, 2]
+    r_l = _srgb_to_linear(r)
+    g_l = _srgb_to_linear(g)
+    b_l = _srgb_to_linear(b)
+    return 0.2126 * r_l + 0.7152 * g_l + 0.0722 * b_l
+
+
 def is_dark_image(png_path, threshold=None):
-    """检查图片是否过暗（非透明区域平均亮度 < threshold）"""
+    """W3C相对亮度检测：L <= 0.5 → 深色背景"""
     if threshold is None:
         threshold = DARK_THRESHOLD
     try:
@@ -18,8 +35,8 @@ def is_dark_image(png_path, threshold=None):
         if not mask.any():
             return False
         pixels = a[:, :, :3][mask].astype(np.float64)
-        avg_brightness = pixels.mean()
-        return avg_brightness < threshold
+        L = relative_luminance(pixels).mean()
+        return L <= threshold
     except Exception:
         return False
 
