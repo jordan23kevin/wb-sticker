@@ -6,7 +6,6 @@ from config.settings import SOURCE_BASE
 from core.back import process_back
 from core.front import process_front
 from utils.sticker_typer import get_type
-from utils.detector import is_dark_image
 
 
 def run_pipeline(is_black: bool = False, single_folder: str | None = None, skip_ai_entry: bool = False):
@@ -37,17 +36,6 @@ def run_pipeline(is_black: bool = False, single_folder: str | None = None, skip_
         if not pngs:
             print(f"\n  [?] {dn}: 02_REM_BG 无文件")
             continue
-
-        # 黑T：预检所有PNG，一张过暗则整组跳过
-        if is_black:
-            skip_all = False
-            for png in pngs:
-                if is_dark_image(os.path.join(rembg_dir, png)):
-                    print(f"\n  [SKIP] {dn}: {png} 过暗，整组跳过黑T")
-                    skip_all = True
-                    break
-            if skip_all:
-                continue
 
         for png in pngs:
             t = get_type(png)

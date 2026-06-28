@@ -10,8 +10,6 @@ from services.meitu import (
     find_meitu, launch_meitu, switch_torso, enter_ai_sticker,
     wait_sticker, import_file, do_mix, save_image,
 )
-from utils.detector import is_dark_image
-
 u = ctypes.windll.user32
 
 
@@ -30,10 +28,6 @@ def process_front(dx_folder: str, png_name: str, is_black: bool = False, skip_ai
 
     if os.path.exists(output_path) and os.path.getsize(output_path) > MIN_FILE_SIZE:
         print("  [OK] 已存在，跳过", flush=True)
-        return True
-
-    if is_black and is_dark_image(png_path):
-        print("  [SKIP] 深色贴图，黑T跳过", flush=True)
         return True
 
     hwnd = find_meitu()
