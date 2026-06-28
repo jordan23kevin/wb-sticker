@@ -48,13 +48,11 @@ def process_back(dx_folder: str, png_name: str, is_black: bool = False, skip_ai_
             return False
         time.sleep(1.5)
     elif hwnd:
-        # 复用美图：切胚衣不杀进程
         hwnd = switch_torso(hwnd, torso_path, keep_alive=True)
         if not hwnd:
             return False
         time.sleep(1.5)
-        # 新图加载后AI贴图区收起，重新展开
-        enter_ai_sticker(hwnd)
+        # 复用美图不点AI入口，直接点新增图片
     else:
         hwnd = launch_meitu(torso_path)
         if not hwnd:
@@ -67,11 +65,12 @@ def process_back(dx_folder: str, png_name: str, is_black: bool = False, skip_ai_
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     click(*BTN["add_image"], 0.5)
     if not import_file(png_path):
-        print("  [FAIL] 首次失败，重试...", flush=True)
+        print("  [FAIL] 首次失败，展开AI面板重试...", flush=True)
         u.keybd_event(0x1B, 0, 0, 0)
         time.sleep(0.02)
         u.keybd_event(0x1B, 0, 2, 0)
         time.sleep(0.2)
+        enter_ai_sticker(hwnd)
         click(*BTN["add_image"], 0.5)
         if not import_file(png_path):
             print("  [FAIL] import_file failed", flush=True)
