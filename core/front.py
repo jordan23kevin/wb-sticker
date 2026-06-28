@@ -8,7 +8,7 @@ from config.settings import BTN, BASE_TORSO, SOURCE_BASE, MIN_FILE_SIZE
 from services.win32 import ff, click, drag, key_comb, mdown, mmove, mup
 from services.meitu import (
     find_meitu, launch_meitu, switch_torso, enter_ai_sticker,
-    sample_pixels, wait_sticker, import_file, do_mix, save_image,
+    wait_sticker, import_file, do_mix, save_image,
 )
 from utils.detector import is_dark_image
 
@@ -46,7 +46,7 @@ def process_front(dx_folder: str, png_name: str, is_black: bool = False, skip_ai
         if not hwnd:
             return False
         time.sleep(1.5)
-        # AI贴图已展开，不调用 enter_ai_sticker
+        enter_ai_sticker(hwnd)
     else:
         hwnd = launch_meitu(torso_path)
         if not hwnd:
@@ -56,7 +56,6 @@ def process_front(dx_folder: str, png_name: str, is_black: bool = False, skip_ai
 
     ff(hwnd)
     time.sleep(0.2)
-    before = sample_pixels()
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     click(*BTN["add_image"], 0.5)
     if not import_file(png_path):
@@ -70,7 +69,7 @@ def process_front(dx_folder: str, png_name: str, is_black: bool = False, skip_ai
             return False
 
     ff(hwnd)
-    wait_sticker(before, hwnd=hwnd)
+    wait_sticker(hwnd=hwnd)
     click(*BTN["sel_sticker"], 0.08)
 
     ff(hwnd)

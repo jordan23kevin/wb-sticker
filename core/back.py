@@ -8,7 +8,7 @@ from config.settings import MEITU_EXE, BTN, TAIL1, BASE_TORSO, SOURCE_BASE, MIN_
 from services.win32 import ff, click, drag, key_comb, mdown, mmove, mup
 from services.meitu import (
     find_meitu, launch_meitu, switch_torso, enter_ai_sticker,
-    sample_pixels, wait_sticker, import_file, do_mix, save_image,
+    wait_sticker, import_file, do_mix, save_image,
 )
 from utils.detector import calc_offset_back, is_dark_image
 
@@ -42,17 +42,18 @@ def process_back(dx_folder: str, png_name: str, is_black: bool = False, skip_ai_
     drag_start = TAIL1["DRAG_START"]
 
     hwnd = find_meitu()
-    hwnd = find_meitu()
     if skip_ai_entry and hwnd:
         hwnd = switch_torso(hwnd, torso_path, keep_alive=True)
         if not hwnd:
             return False
         time.sleep(1.5)
     elif hwnd:
-        hwnd = switch_torso(hwnd, torso_path)
+        # 复用美图：切胚衣不杀进程
+        hwnd = switch_torso(hwnd, torso_path, keep_alive=True)
         if not hwnd:
             return False
         time.sleep(1.5)
+        # 新图加载后AI贴图区收起，重新展开
         enter_ai_sticker(hwnd)
     else:
         hwnd = launch_meitu(torso_path)
@@ -63,7 +64,6 @@ def process_back(dx_folder: str, png_name: str, is_black: bool = False, skip_ai_
 
     ff(hwnd)
     time.sleep(0.2)
-    before = sample_pixels()
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     click(*BTN["add_image"], 0.5)
     if not import_file(png_path):
@@ -78,7 +78,7 @@ def process_back(dx_folder: str, png_name: str, is_black: bool = False, skip_ai_
             return False
 
     ff(hwnd)
-    wait_sticker(before, hwnd=hwnd)
+    wait_sticker(hwnd=hwnd)
     click(*BTN["sel_sticker"], 0.08)
 
     ff(hwnd)

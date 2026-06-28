@@ -11,6 +11,8 @@ from services.win32 import u, ff, click, mdown, mmove, mup, key_comb, get_pixel
 
 # 美图窗口标题（繁体/简体）
 _MEITU_TITLES = ("美圖秀秀", "美图秀秀")
+# AI贴图面板状态（复用美图时跳过AI工具/AI贴图点击）
+_ai_panel_open = False
 
 
 def _has_title(b):
@@ -45,54 +47,45 @@ def find_meitu():
 
 
 def launch_meitu(torso_path=None):
-    """启动图片编辑 → 定位窗口 → 再加载胚衣（分两步）"""
+    """启动图片编辑 → 定位窗口 → 一步到位（直接打开胚衣）"""
     import os as _os, subprocess as _sp
     _os.system('taskkill /f /im XiuXiu.exe >nul 2>&1')
     time.sleep(0.3)
 
-    # 先启动，不传文件
-    _sp.Popen([MEITU_EXE])
+    # 一步：直接打开胚衣
+    cmd = [MEITU_EXE]
+    if torso_path:
+        cmd.append(torso_path)
+    _sp.Popen(cmd)
+
     hwnd = None
-    for _ in range(30):
-        time.sleep(0.2)
-        hwnd = find_meitu()
+    for _ in range(40):
+        time.sleep(0.3)
+        def fh(h, l):
+            nonlocal hwnd
+            b = ctypes.create_unicode_buffer(64)
+            u.GetWindowTextW(h, b, 64)
+            if _has_title(b) and ('編輯' in b.value or '编辑' in b.value):
+                hwnd = h
+                return False
+            return True
+        u.EnumWindows(
+            ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fh), 0
+        )
         if hwnd:
             break
+
     if not hwnd:
-        return None
+        # 兜底：找任何美图窗口
+        hwnd = find_meitu()
 
-    # 先定位窗口
-    u.ShowWindow(hwnd, 9)
-    time.sleep(0.2)
-    u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040)
-    u.SetForegroundWindow(hwnd)
-    time.sleep(0.3)
+    if hwnd:
+        u.ShowWindow(hwnd, 9)
+        time.sleep(0.2)
+        u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040)
+        u.SetForegroundWindow(hwnd)
+        time.sleep(0.5)
 
-    # 再打开胚衣
-    if torso_path:
-        _sp.Popen([MEITU_EXE, torso_path])
-        # 等窗口标题变更为"图片编辑"（有图状态）
-        for _ in range(30):
-            time.sleep(0.2)
-            # 重找窗口（标题变了）
-            def fh(h, l):
-                nonlocal hwnd
-                b = ctypes.create_unicode_buffer(64)
-                u.GetWindowTextW(h, b, 64)
-                if _has_title(b) and ('編輯' in b.value or '编辑' in b.value):
-                    hwnd = h
-                    return False
-                return True
-            u.EnumWindows(
-                ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(fh), 0
-            )
-            if hwnd:
-                u.SetForegroundWindow(hwnd)
-                time.sleep(0.5)
-                break
-
-    # 清理多余的窗口（美图秀秀、美图批处理等）
-    kill_extra_windows()
     return hwnd
 
 
@@ -101,6 +94,7 @@ def switch_torso(hwnd, torso_path, keep_alive=False):
        keep_alive=False（默认）：杀进程重开（旧行为）
        keep_alive=True：关闭当前图+打开新胚衣，不杀进程
     """
+    reset_ai_panel()  # 切胚衣后AI面板复位
     ff(hwnd)
     key_comb(0x11, 0x57)  # Ctrl+W close
     time.sleep(0.1)
@@ -175,10 +169,20 @@ def kill_extra_windows():
 
 
 def enter_ai_sticker(hwnd):
-    """进入AI贴图模式"""
+    """进入AI贴图模式（AI面板未展开时才点）"""
+    global _ai_panel_open
+    if _ai_panel_open:
+        return
     ff(hwnd)
     click(*BTN["AI_tools"], 1.0)
     click(*BTN["AI_sticker"], 1.0)
+    _ai_panel_open = True
+
+
+def reset_ai_panel():
+    """标记AI面板已关闭（切胚衣后需要重新进入）"""
+    global _ai_panel_open
+    _ai_panel_open = False
 
 
 def is_window_responding(hwnd):
@@ -186,44 +190,32 @@ def is_window_responding(hwnd):
     return ctypes.windll.user32.IsHungAppWindow(hwnd) == 0
 
 
-def sample_pixels(center_x=1920, center_y=700):
-    """采样画布区域的像素值（贴图会出现的位置）"""
-    # 画布中心区域 5x5 网格，覆盖 800x800 范围
-    offsets = []
-    for dx in range(-400, 401, 200):
-        for dy in range(-400, 401, 200):
-            offsets.append((dx, dy))
-    return [get_pixel(center_x + dx, center_y + dy) for dx, dy in offsets]
+def wait_sticker(before=None, center_x=0, center_y=0, timeout=0, hwnd=None):
+    """贴图置入后等3D渲染完成 — 窗口移动检测
 
-
-def wait_sticker(before=None, center_x=1920, center_y=700, timeout=0, hwnd=None):
-    """贴图置入后等渲染完成 — 像素变化检测
-
-    美图导入图片后（可能有3D识别），等画布像素变化即渲染完成。
-    before 是 sample_pixels() 在 (center_x, center_y) 附近5x5网格的采样值。
-    相同坐标重新采样，有任一像素变化 >15 则认为贴图已渲染。
+    每0.2s尝试移动美图窗口1px→移回原位。
+    窗口能移动 = 已恢复响应 = 3D/渲染完成。
+    最长等30s。
     """
-    if not before:
+    if not hwnd:
         time.sleep(0.5)
         return True
 
-    # 生成与 sample_pixels 一致的偏移列表
-    offsets = [(dx, dy) for dx in range(-400, 401, 200) for dy in range(-400, 401, 200)]
-
-    for i in range(120):  # 最多等 36s
-        changed = False
-        for j, (dx, dy) in enumerate(offsets):
-            if j >= len(before):
-                break
-            now = get_pixel(center_x + dx, center_y + dy)
-            if any(abs(now[c] - before[j][c]) > 15 for c in range(3)):
-                changed = True
-                break
-        if changed:
-            time.sleep(0.2)
+    org_x, org_y = 1280, 0
+    for i in range(150):  # 最多等 30s
+        # 右移1px
+        u.SetWindowPos(hwnd, 0, org_x + 1, org_y, 0, 0, 0x0001)  # SWP_NOSIZE
+        time.sleep(0.02)
+        # 移回原位
+        u.SetWindowPos(hwnd, 0, org_x, org_y, 0, 0, 0x0001)
+        # 检查窗口是否真的在原始位置（没有卡死）
+        rect = ctypes.wintypes.RECT()
+        u.GetWindowRect(hwnd, ctypes.byref(rect))
+        if rect.left == org_x:
+            time.sleep(0.15)
             return True
-        time.sleep(0.3)
-    print("  [WARN] 像素无变化超时(36s)，强制继续")
+        time.sleep(0.2)
+    print("  [WARN] 窗口移动检测超时(30s)，强制继续")
     return True
 
 
