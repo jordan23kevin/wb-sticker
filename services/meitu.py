@@ -91,6 +91,8 @@ def launch_meitu(torso_path=None):
                 time.sleep(0.5)
                 break
 
+    # 清理多余的窗口（美图秀秀、美图批处理等）
+    kill_extra_windows()
     return hwnd
 
 
@@ -130,6 +132,7 @@ def switch_torso(hwnd, torso_path, keep_alive=False):
                 u.SetWindowPos(hwnd, 0, 1280, 0, 1280, u.GetSystemMetrics(1), 0x0040)
                 u.SetForegroundWindow(hwnd)
                 time.sleep(0.5)
+                kill_extra_windows()
                 return hwnd
         return None
 
@@ -150,6 +153,25 @@ def switch_torso(hwnd, torso_path, keep_alive=False):
             time.sleep(0.5)  # 等窗口稳定
             return new_hwnd
     return None
+
+
+def kill_extra_windows():
+    """关闭非图片编辑的美图窗口（美图秀秀启动页、美图批处理等），只留图片编辑"""
+    def cb(h, l):
+        t = ctypes.create_unicode_buffer(256)
+        u.GetWindowTextW(h, t, 256)
+        pp = ctypes.c_uint32(0)
+        u.GetWindowThreadProcessId(h, ctypes.byref(pp))
+        tv = t.value
+        # 包含圖片編輯/图片编辑 → 保留；其他美图窗口 → 关闭
+        if tv and not ('圖片編輯' in tv or '图片编辑' in tv) and _has_title(t):
+            if u.IsWindowVisible(h):
+                u.PostMessageW(h, 0x0010, 0, 0)  # WM_CLOSE
+        return True
+
+    u.EnumWindows(
+        ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(cb), 0
+    )
 
 
 def enter_ai_sticker(hwnd):
